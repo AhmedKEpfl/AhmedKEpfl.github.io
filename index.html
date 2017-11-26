@@ -1,1 +1,151 @@
-Hello World
+<!doctype html>
+
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+
+        <title>The HTML5 Herald</title>
+        <meta name="description" content="The HTML5 Herald">
+        <meta name="author" content="SitePoint">
+
+        <link rel="stylesheet" type="text/css" href="style.css">
+
+        <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.2.1.min.js"></script>
+
+        <link
+            rel="stylesheet"
+            href="http://cdn.leafletjs.com/leaflet-0.7/leaflet.css"
+        />
+
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+    </head>
+
+    <body>
+        <div class = "row" id="main_container">
+            <div class="col-sm-10">
+                <div class="row">
+
+                </div>
+
+                <div class="row" id="map_container">
+
+                </div>
+            </div>
+            <div class="col-sm-2" id="right_pane">
+
+            </div>
+        </div>
+
+        <script
+            src="http://cdn.leafletjs.com/leaflet-0.7/leaflet.js">
+        </script>
+
+        <script
+            src="http://leaflet.github.io/Leaflet.heat/dist/leaflet-heat.js">
+        </script>
+
+        <script src="https://d3js.org/d3.v4.min.js"></script>
+        <script src="https://unpkg.com/d3-sankey@0.6"></script>
+
+        <script>
+
+            let mymap = L.map('map_container').setView([51.505, -0.09], 13)
+            let tileLayer = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+                attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
+                maxZoom: 18,
+                id: 'mapbox.streets',
+                accessToken: 'pk.eyJ1IjoiYWhtZWRrdWxvdmljIiwiYSI6ImNqYTR2Mmp1dTlsbmoycXB5aXkyOXdtMjkifQ.sU3WNVes2qNhTFH-0nAzYA'
+                })
+            tileLayer.addTo(mymap);
+
+            // d3.tsv('20171114.export.csv', function(data){
+            //
+            //     function isANumber(number){
+            //         return !isNaN(parseInt(number))
+            //     }
+            //
+            //     filteredGeoPoints = data.filter((row) => isANumber(row["ActionGeo_Lat"]) && isANumber(row["ActionGeo_Long"]))
+            //         .map(row => L.latLng(row["ActionGeo_Lat"], row["ActionGeo_Long"]));
+            //
+            //     let heat = L.heatLayer(filteredGeoPoints, {
+            //         radius: 15,
+            //         blur: 15,
+            //         maxZoom: 17,
+            //     }).addTo(mymap);
+            // })
+
+            // Sankey part:
+
+            // var svg = d3.select("svg"),
+            //     width = +svg.attr("width"),
+            //     height = +svg.attr("height");
+            //
+            // var formatNumber = d3.format(",.0f"),
+            //     format = function(d) { return formatNumber(d) + " TWh"; },
+            //     color = d3.scaleOrdinal(d3.schemeCategory10);
+            //
+            // var sankey = d3.sankey()
+            //     .nodeWidth(15)
+            //     .nodePadding(10)
+            //     .extent([[1, 1], [width - 1, height - 6]]);
+            //
+            // var link = svg.append("g")
+            //     .attr("class", "links")
+            //     .attr("fill", "none")
+            //     .attr("stroke", "#000")
+            //     .attr("stroke-opacity", 0.2)
+            //   .selectAll("path");
+            //
+            // var node = svg.append("g")
+            //     .attr("class", "nodes")
+            //     .attr("font-family", "sans-serif")
+            //     .attr("font-size", 10)
+            //   .selectAll("g");
+            //
+            // d3.json("energy.json", function(error, energy) {
+            //   if (error) throw error;
+            //
+            //   sankey(energy);
+            //
+            //   link = link
+            //     .data(energy.links)
+            //     .enter().append("path")
+            //       .attr("d", d3.sankeyLinkHorizontal())
+            //       .attr("stroke-width", function(d) { return Math.max(1, d.width); });
+            //
+            //   link.append("title")
+            //       .text(function(d) { return d.source.name + " → " + d.target.name + "\n" + format(d.value); });
+            //
+            //   node = node
+            //     .data(energy.nodes)
+            //     .enter().append("g");
+            //
+            //   node.append("rect")
+            //       .attr("x", function(d) { return d.x0; })
+            //       .attr("y", function(d) { return d.y0; })
+            //       .attr("height", function(d) { return d.y1 - d.y0; })
+            //       .attr("width", function(d) { return d.x1 - d.x0; })
+            //       .attr("fill", function(d) { return color(d.name.replace(/ .*/, "")); })
+            //       .attr("stroke", "#000");
+            //
+            //   node.append("text")
+            //       .attr("x", function(d) { return d.x0 - 6; })
+            //       .attr("y", function(d) { return (d.y1 + d.y0) / 2; })
+            //       .attr("dy", "0.35em")
+            //       .attr("text-anchor", "end")
+            //       .text(function(d) { return d.name; })
+            //     .filter(function(d) { return d.x0 < width / 2; })
+            //       .attr("x", function(d) { return d.x1 + 6; })
+            //       .attr("text-anchor", "start");
+            //
+            //   node.append("title")
+            //       .text(function(d) { return d.name + "\n" + format(d.value); });
+            });
+        </script>
+    </body>
+</html>
