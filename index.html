@@ -26,17 +26,17 @@
     </head>
 
     <body>
-        <div class = "row" id="main_container">
-            <div class="col-sm-10">
-                <div class="row">
+
+        <div id="main_container">
+            <div id="container_map_sankey">
+                <div id="container_sankey_info">
 
                 </div>
-
-                <div class="row" id="map_container">
+                <div id="container_heatmap">
 
                 </div>
             </div>
-            <div class="col-sm-2" id="right_pane">
+            <div id="container_event_selection">
 
             </div>
         </div>
@@ -54,7 +54,7 @@
 
         <script>
 
-            let mymap = L.map('map_container').setView([51.505, -0.09], 13)
+            let mymap = L.map('container_heatmap').setView([51.505, -0.09], 13)
             let tileLayer = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
                 attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
                 maxZoom: 18,
@@ -62,6 +62,26 @@
                 accessToken: 'pk.eyJ1IjoiYWhtZWRrdWxvdmljIiwiYSI6ImNqYTR2Mmp1dTlsbmoycXB5aXkyOXdtMjkifQ.sU3WNVes2qNhTFH-0nAzYA'
                 })
             tileLayer.addTo(mymap);
+
+            d3.tsv("CAMEO.eventcodes.txt", function(data) {
+                let mainEventCodes = data.filter((cameoElem) => cameoElem.CAMEOEVENTCODE.length === 2);
+                let containerEventSelection = document.getElementById("container_event_selection");
+
+                mainEventCodes.forEach((cameoElem) => {
+                    let checkboxContainer = document.createElement("div");
+                    let checkboxElem = document.createElement("input");
+                    checkboxElem.setAttribute("type", "checkbox");
+                    checkboxContainer.appendChild(checkboxElem);
+
+                    let checkboxLabel = document.createElement("label");
+                    checkboxLabel.classList.add("label_event_checkbox");
+                    checkboxLabel.innerHTML = cameoElem.EVENTDESCRIPTION;
+                    checkboxContainer.appendChild(checkboxLabel);
+
+
+                    containerEventSelection.appendChild(checkboxContainer);
+                })
+            })
 
             // d3.tsv('20171114.export.csv', function(data){
             //
@@ -145,7 +165,7 @@
             //
             //   node.append("title")
             //       .text(function(d) { return d.name + "\n" + format(d.value); });
-            });
+            // });
         </script>
     </body>
 </html>
