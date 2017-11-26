@@ -30,7 +30,22 @@
         <div id="main_container">
             <div id="container_map_sankey">
                 <div id="container_sankey_info">
+                    <div id="container_sankey_switch">
+                        <div id="container_sankey">
+                            <svg />
+                        </div>
+                        <div id="switch">
+                            <div id="switch_countries">
+                                <p> Countries </p>
+                            </div>
+                            <div id="switch_events">
+                                <p> Events </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="container_country_details">
 
+                    </div>
                 </div>
                 <div id="container_heatmap">
 
@@ -83,89 +98,104 @@
                 })
             })
 
-            // d3.tsv('20171114.export.csv', function(data){
-            //
-            //     function isANumber(number){
-            //         return !isNaN(parseInt(number))
-            //     }
-            //
-            //     filteredGeoPoints = data.filter((row) => isANumber(row["ActionGeo_Lat"]) && isANumber(row["ActionGeo_Long"]))
-            //         .map(row => L.latLng(row["ActionGeo_Lat"], row["ActionGeo_Long"]));
-            //
-            //     let heat = L.heatLayer(filteredGeoPoints, {
-            //         radius: 15,
-            //         blur: 15,
-            //         maxZoom: 17,
-            //     }).addTo(mymap);
-            // })
+            d3.tsv('20171114.tsv', function(data){
+
+                function isANumber(number){
+                    return !isNaN(parseInt(number))
+                }
+
+                console.log("Hello")
+
+                console.log(data.length)
+
+                filteredGeoPoints = data.filter((row) => isANumber(row["ActionGeo_Lat"]) && isANumber(row["ActionGeo_Long"]))
+                    .map(row => L.latLng(row["ActionGeo_Lat"], row["ActionGeo_Long"]));
+                console.log(JSON.stringify(filteredGeoPoints))
+                let heat = L.heatLayer(filteredGeoPoints, {
+                    radius: 15,
+                    blur: 15,
+                    maxZoom: 17,
+                }).addTo(mymap);
+            })
 
             // Sankey part:
 
-            // var svg = d3.select("svg"),
-            //     width = +svg.attr("width"),
-            //     height = +svg.attr("height");
-            //
-            // var formatNumber = d3.format(",.0f"),
-            //     format = function(d) { return formatNumber(d) + " TWh"; },
-            //     color = d3.scaleOrdinal(d3.schemeCategory10);
-            //
-            // var sankey = d3.sankey()
-            //     .nodeWidth(15)
-            //     .nodePadding(10)
-            //     .extent([[1, 1], [width - 1, height - 6]]);
-            //
-            // var link = svg.append("g")
-            //     .attr("class", "links")
-            //     .attr("fill", "none")
-            //     .attr("stroke", "#000")
-            //     .attr("stroke-opacity", 0.2)
-            //   .selectAll("path");
-            //
-            // var node = svg.append("g")
-            //     .attr("class", "nodes")
-            //     .attr("font-family", "sans-serif")
-            //     .attr("font-size", 10)
-            //   .selectAll("g");
-            //
-            // d3.json("energy.json", function(error, energy) {
-            //   if (error) throw error;
-            //
-            //   sankey(energy);
-            //
-            //   link = link
-            //     .data(energy.links)
-            //     .enter().append("path")
-            //       .attr("d", d3.sankeyLinkHorizontal())
-            //       .attr("stroke-width", function(d) { return Math.max(1, d.width); });
-            //
-            //   link.append("title")
-            //       .text(function(d) { return d.source.name + " → " + d.target.name + "\n" + format(d.value); });
-            //
-            //   node = node
-            //     .data(energy.nodes)
-            //     .enter().append("g");
-            //
-            //   node.append("rect")
-            //       .attr("x", function(d) { return d.x0; })
-            //       .attr("y", function(d) { return d.y0; })
-            //       .attr("height", function(d) { return d.y1 - d.y0; })
-            //       .attr("width", function(d) { return d.x1 - d.x0; })
-            //       .attr("fill", function(d) { return color(d.name.replace(/ .*/, "")); })
-            //       .attr("stroke", "#000");
-            //
-            //   node.append("text")
-            //       .attr("x", function(d) { return d.x0 - 6; })
-            //       .attr("y", function(d) { return (d.y1 + d.y0) / 2; })
-            //       .attr("dy", "0.35em")
-            //       .attr("text-anchor", "end")
-            //       .text(function(d) { return d.name; })
-            //     .filter(function(d) { return d.x0 < width / 2; })
-            //       .attr("x", function(d) { return d.x1 + 6; })
-            //       .attr("text-anchor", "start");
-            //
-            //   node.append("title")
-            //       .text(function(d) { return d.name + "\n" + format(d.value); });
-            // });
+            let selectionSankeyContainer = d3.select("#container_sankey");
+            let bboxSankeyContainer = selectionSankeyContainer.node().getBoundingClientRect();
+
+            let svg = d3.select("svg"),
+                width = bboxSankeyContainer.width;
+                height = bboxSankeyContainer.height;
+
+            svg.attr("width", width)
+                .attr("height", height);
+
+            let formatNumber = d3.format(",.0f"),
+                format = function(d) { return formatNumber(d) + " TWh"; },
+                color = d3.scaleOrdinal(d3.schemeCategory10);
+
+            let sankey = d3.sankey()
+                .nodeWidth(15)
+                .nodePadding(10)
+                .extent([[1, 1], [width - 1, height - 6]]);
+
+            let link = svg.append("g")
+                .attr("class", "links")
+                .attr("fill", "none")
+                .attr("stroke", "#000")
+                .attr("stroke-opacity", 0.2)
+              .selectAll("path");
+
+            let node = svg.append("g")
+                .attr("class", "nodes")
+                .attr("font-family", "sans-serif")
+                .attr("font-size", 10)
+              .selectAll("g");
+
+            let exampleGraph = {
+                nodes: [{name: "USA"}, {name: "Italy"}, {name: "Germany"}, {name: "China"},
+                    {name: "Switzerland"},
+                    {name: "USA"}, {name: "France"}, {name: "Germany"}, {name: "Spain"}],
+                links: [{source: 0, target: 4, value: 0.5}, {source: 1, target: 4, value: 1}, {source: 2, target: 4, value: 1.2},
+                        {source: 3, target: 4, value: 1.1}, {source: 4, target: 5, value: 0.9}, {source: 4, target: 6, value: 1.9},
+                        {source: 4, target: 7, value: 1.7}, {source: 4, target: 8, value: 1.4}]
+                    };
+
+            sankey(exampleGraph);
+
+          link = link
+            .data(exampleGraph.links)
+            .enter().append("path")
+              .attr("d", d3.sankeyLinkHorizontal())
+              .attr("stroke-width", function(d) { return Math.max(1, d.width); });
+
+          link.append("title")
+              .text(function(d) { return d.source.name + " → " + d.target.name + "\n" + format(d.value); });
+
+          node = node
+            .data(exampleGraph.nodes)
+            .enter().append("g");
+
+          node.append("rect")
+              .attr("x", function(d) { return d.x0; })
+              .attr("y", function(d) { return d.y0; })
+              .attr("height", function(d) { return d.y1 - d.y0; })
+              .attr("width", function(d) { return d.x1 - d.x0; })
+              .attr("fill", function(d) { return color(d.name.replace(/ .*/, "")); })
+              .attr("stroke", "#000");
+
+          node.append("text")
+              .attr("x", function(d) { return d.x0 - 6; })
+              .attr("y", function(d) { return (d.y1 + d.y0) / 2; })
+              .attr("dy", "0.35em")
+              .attr("text-anchor", "end")
+              .text(function(d) { return d.name; })
+            .filter(function(d) { return d.x0 < width / 2; })
+              .attr("x", function(d) { return d.x1 + 6; })
+              .attr("text-anchor", "start");
+
+          node.append("title")
+              .text(function(d) { return d.name + "\n" + format(d.value); });
         </script>
     </body>
 </html>
