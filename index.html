@@ -36,6 +36,9 @@
                         </div>
                     </div>
                     <div id="container_country_details">
+                        <select id="select_country">
+
+                        </select>
                         <p> Here we want to give the user the possibility to focus on one country. For
                             example, here the user has clicked on Switzerland. If you take a look at the
                             sankey map you can see which countries are the ones where the news mention
@@ -85,9 +88,12 @@
             let eventCodes;
             let selectedEventCodes = [];
             let countriesMentions = {};
-            let selectedCountry = "US";
+            const defaultCountry = "US";
+
+            let selectedCountry = defaultCountry;
 
             function showSankeyMap(){
+                d3.selectAll("svg > *").remove();
                 let selectionSankeyContainer = d3.select("#container_sankey");
                 let bboxSankeyContainer = selectionSankeyContainer.node().getBoundingClientRect();
 
@@ -141,9 +147,6 @@
                 let countryIntMapping = {};
                 // I want to keep track of which countries are mentionning my selected country
                 let reverseSelectedMentions = {};
-
-                console.log(countriesMentions)
-
 
                 for(sourceCountry in countriesMentions){
                     for(eventCountry in countriesMentions[sourceCountry]){
@@ -209,59 +212,10 @@
                 const nodes = reverseNodes.concat([{name: selectedCountry}]).concat(rightNodes);
                 const links = reverseLinks.concat(rightLinks);
 
-                console.log(JSON.stringify(nodes))
-                console.log(JSON.stringify(links))
-                /*
-                reverseSelectedMentions = Object.entries(reverseSelectedMentions).sort((a, b) => b[1] - a[1]).splice(0, 4);
-                const reverseSelectedNodes = reverseSelectedMentions.map(elem => {
-                    return {name: elem[0]};
-                });
-                const
-
-                let proportionsMentions = Object.keys(selectedMentions).map(key => {
-                    return {
-                        source: nodes.length - 1,
-                        target: countryIntMapping[key] + nbCountries,
-                        value: selectedMentions[key] / sumMentions,
-                    }
-                });
-
-                let proportionsMentionsReverse = Object.keys(reverseSelectedMentions).map(key => {
-                    return {
-                        source: countryIntMapping[key],
-                        target: nodes.length - 1,
-                        value: reverseSelectedMentions[key] / sumReverseMentions,
-                    }
-                })
-
-                proportionsMentions = proportionsMentions.sort((a, b) => {
-                    return b.value - a.value;
-                }).slice(0, 4);
-
-                proportionsMentionsReverse = proportionsMentionsReverse.sort((a, b) => {
-                    return b.value - a.value;
-                }).slice(0, 4);
-
-                links = proportionsMentions.concat(proportionsMentionsReverse)
-                */
-
                 let exampleGraph = {
                     nodes: nodes,
                     links: links
                 };
-
-                /*
-                let exampleGraph = {
-                nodes: [{name: "USA"}, {name: "Italy"}, {name: "Germany"}, {name: "China"}
-                    ,
-                    {name: "Switzerland"},
-                    {name: "USA"}, {name: "France"}, {name: "Germany"}, {name: "Spain"}],
-                links: [{source: 0, target: 4, value: 0.5}, {source: 1, target: 4, value: 1}, {source: 2, target: 4, value: 1.2},
-                        {source: 3, target: 4, value: 1.1}, {source: 4, target: 5, value: 0.9}, {source: 4, target: 6, value: 1.9},
-                        {source: 4, target: 7, value: 1.7}, {source: 4, target: 8, value: 1.4}]
-                    };
-
-                */
 
                 sankey(exampleGraph);
 
@@ -382,7 +336,29 @@
                 })
             })
 
+            function fipsCountriesProcessing(){
+                let selectCountry = document.getElementById("select_country")
+                d3.csv("frame_fips.csv", function(data){
+                    data.sort((a, b) => a["Country"] > b["Country"])
+                    .forEach(row => {
+                        let optionCountry = document.createElement("option");
+                        optionCountry.setAttribute("value", row["FIPS"]);
+                        optionCountry.innerHTML = row["Country"];
+                        selectCountry.appendChild(optionCountry);
+                    })
+
+                    selectCountry.value = defaultCountry;
+                })
+
+                selectCountry.addEventListener("change", () => {
+                    selectedCountry = selectCountry.value;
+                    showSankeyMap();
+                })                
+            }
+
             showHeatmapData();
+
+            fipsCountriesProcessing();
 
             // Sankey part:
         </script>
