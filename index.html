@@ -120,11 +120,34 @@
                     .attr("font-size", 10)
                   .selectAll("g");
 
+                let selectedMentions = {};
+                let reverseSelectedMentions = {};
 
+                countriesMentions.forEach(sourceTarget => {
+                    const sourceCountry = sourceTarget[0];
+                    const targets = sourceTarget[1];
+                    targets.forEach(target => {
+                        const targetCountry = target[0];
+                        const value = target[1];
+                        if(targetCountry === selectedCountry){
+                            reverseSelectedMentions[sourceCountry] = value;
+                        } else if(sourceCountry == selectedCountry){
+                            selectedMentions[targetCountry] = value;
+                        }
+                    });
+                })
+
+                console.log(JSON.stringify(selectedMentions["FR"]))
+                console.log(JSON.stringify(reverseSelectedMentions))
+                /*
                 let nodes = [];
                 let countryIntMapping = {};
                 // I want to keep track of which countries are mentionning my selected country
                 let reverseSelectedMentions = {};
+
+                console.log(countriesMentions)
+
+
                 for(sourceCountry in countriesMentions){
                     for(eventCountry in countriesMentions[sourceCountry]){
                         if(nodes.map(node => node.name).indexOf(eventCountry) < 0){
@@ -136,6 +159,7 @@
                         }
                     }
                 }
+
                 const nbCountries = nodes.length;
                 // The following is to avoid self loops
                 // Nodes on the right of the sankey diagram:
@@ -149,6 +173,7 @@
                 delete selectedMentions[selectedCountry];
                 delete reverseSelectedMentions[selectedCountry];
 
+                /*
                 function getSumMentions(mentions){
                     return Object.keys(mentions).reduce(
                         function(sum, key){
@@ -161,6 +186,22 @@
 
                 let sumMentions = getSumMentions(selectedMentions);
                 let sumReverseMentions = getSumMentions(reverseSelectedMentions);
+                */
+                selectedMentions = Object.entries(selectedMentions).sort((a, b) => b[1] - a[1]).splice(0, 4);
+                let selectedNodes = selectedMentions.map(elem => {
+                    return {name: elem[0]}
+                });
+                selectedNodes = selectedNodes.concat([{name: selectedCountry}]);
+                const links = selectedMentions.map((elem, index) => {
+                    return {source: selectedNodes.length - 1, target: index, value: elem[1]}
+                });
+
+                /*
+                reverseSelectedMentions = Object.entries(reverseSelectedMentions).sort((a, b) => b[1] - a[1]).splice(0, 4);
+                const reverseSelectedNodes = reverseSelectedMentions.map(elem => {
+                    return {name: elem[0]};
+                });
+                const
 
                 let proportionsMentions = Object.keys(selectedMentions).map(key => {
                     return {
@@ -187,15 +228,14 @@
                 }).slice(0, 4);
 
                 links = proportionsMentions.concat(proportionsMentionsReverse)
+                */
 
-
-                let graph = {
-                    nodes: nodes,
+                let exampleGraph = {
+                    nodes: selectedNodes,
                     links: links
                 };
 
-
-
+                /*
                 let exampleGraph = {
                 nodes: [{name: "USA"}, {name: "Italy"}, {name: "Germany"}, {name: "China"}
                     ,
@@ -205,6 +245,8 @@
                         {source: 3, target: 4, value: 1.1}, {source: 4, target: 5, value: 0.9}, {source: 4, target: 6, value: 1.9},
                         {source: 4, target: 7, value: 1.7}, {source: 4, target: 8, value: 1.4}]
                     };
+
+                */
 
                 sankey(exampleGraph);
 
@@ -255,6 +297,8 @@
                     }
 
                     filteredGeoPoints = data.filter((row) => {
+
+                            // We take advantage of the filter to construct the countriesMentions object:
                             const sourceCountry = row["SOURCE_CountryCode"];
                             const eventCountry = row["ActionGeo_CountryCode"];
                             if(!(sourceCountry in countriesMentions)){
@@ -265,9 +309,18 @@
                             }
 
                             countriesMentions[sourceCountry][eventCountry] += 1;
+
                             return selectedEventCodes.indexOf(row["EventRootCode"].slice(0, 2)) >= 0
                         })
                         .map(row => L.latLng(row["ActionGeo_Lat"], row["ActionGeo_Long"]));
+
+                    countriesMentions = Object.keys(countriesMentions).map(sourceCountry => {
+                        const currentSTArray = Object.keys(countriesMentions[sourceCountry]);
+                        const sumMentions = currentSTArray.reduce((sum, targetCountry) => {
+                            return sum + countriesMentions[sourceCountry][targetCountry];
+                        }, 0);
+                        return [sourceCountry, currentSTArray.map(country => [country, countriesMentions[sourceCountry][country] / sumMentions])];
+                    });
 
                     heat = L.heatLayer(filteredGeoPoints, {
                         radius: 15,
