@@ -136,8 +136,6 @@
                         }
                     }
                 }
-                console.log(nodes.length)
-
                 const nbCountries = nodes.length;
                 // The following is to avoid self loops
                 // Nodes on the right of the sankey diagram:
@@ -190,26 +188,23 @@
 
                 links = proportionsMentions.concat(proportionsMentionsReverse)
 
-                /*
-                let exampleGraph = {
+
+                let graph = {
                     nodes: nodes,
                     links: links
                 };
-                */
+
 
 
                 let exampleGraph = {
-                nodes: [{name: "USA"}, {name: "Haha"}, {name: "Machin"}, {name: "Italy"}, {name: "Germany"}, {name: "China"}
+                nodes: [{name: "USA"}, {name: "Italy"}, {name: "Germany"}, {name: "China"}
                     ,
                     {name: "Switzerland"},
                     {name: "USA"}, {name: "France"}, {name: "Germany"}, {name: "Spain"}],
-                links: [{source: 0, target: 6, value: 0.5}, {source: 3, target: 6, value: 1}, {source: 4, target: 6, value: 1.2},
-                        {source: 5, target: 6, value: 1.1}, {source: 6, target: 7, value: 0.9}, {source: 6, target: 8, value: 1.9},
-                        {source: 6, target: 9, value: 1.7}, {source: 6, target: 10, value: 1.4}]
+                links: [{source: 0, target: 4, value: 0.5}, {source: 1, target: 4, value: 1}, {source: 2, target: 4, value: 1.2},
+                        {source: 3, target: 4, value: 1.1}, {source: 4, target: 5, value: 0.9}, {source: 4, target: 6, value: 1.9},
+                        {source: 4, target: 7, value: 1.7}, {source: 4, target: 8, value: 1.4}]
                     };
-
-
-                console.log(JSON.stringify(exampleGraph))
 
                 sankey(exampleGraph);
 
