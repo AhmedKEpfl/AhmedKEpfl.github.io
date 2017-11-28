@@ -85,7 +85,7 @@
             let eventCodes;
             let selectedEventCodes = [];
             let countriesMentions = {};
-            let selectedCountry = "CH";
+            let selectedCountry = "US";
 
             function showSankeyMap(){
                 let selectionSankeyContainer = d3.select("#container_sankey");
@@ -136,9 +136,6 @@
                         }
                     });
                 })
-
-                console.log(JSON.stringify(selectedMentions["FR"]))
-                console.log(JSON.stringify(reverseSelectedMentions))
                 /*
                 let nodes = [];
                 let countryIntMapping = {};
@@ -187,15 +184,33 @@
                 let sumMentions = getSumMentions(selectedMentions);
                 let sumReverseMentions = getSumMentions(reverseSelectedMentions);
                 */
-                selectedMentions = Object.entries(selectedMentions).sort((a, b) => b[1] - a[1]).splice(0, 4);
-                let selectedNodes = selectedMentions.map(elem => {
-                    return {name: elem[0]}
+                reverseSelectedMentions = Object.entries(reverseSelectedMentions).sort((a, b) => b[1] - a[1]).splice(0, 8);
+                // Normalizing reverseSelectedMentions:
+                const sumRSM = reverseSelectedMentions.reduce((sum, elem) => sum + elem[1], 0);
+                reverseSelectedMentions = reverseSelectedMentions.map(elem => [elem[0], elem[1] / sumRSM]);
+                const reverseNodes = reverseSelectedMentions.map(elem => {
+                    return {name: elem[0]};
+                })
+                const reverseLinks = reverseSelectedMentions.map((elem, index) => {
+                    return {source: index, target: reverseNodes.length, value: elem[1]};
+                })
+
+                selectedMentions = Object.entries(selectedMentions).sort((a, b) => b[1] - a[1]).splice(0, 8);
+                // Normalizing reverseSelectedMentions:
+                const sumSM = selectedMentions.reduce((sum, elem) => sum + elem[1], 0);
+                selectedMentions = selectedMentions.map(elem => [elem[0], elem[1] / sumSM]);
+                let rightNodes = selectedMentions.map(elem => {
+                    return {name: elem[0]};
                 });
-                selectedNodes = selectedNodes.concat([{name: selectedCountry}]);
-                const links = selectedMentions.map((elem, index) => {
-                    return {source: selectedNodes.length - 1, target: index, value: elem[1]}
+                const rightLinks = selectedMentions.map((elem, index) => {
+                    return {source: reverseNodes.length, target: index + reverseNodes.length + 1, value: elem[1]}
                 });
 
+                const nodes = reverseNodes.concat([{name: selectedCountry}]).concat(rightNodes);
+                const links = reverseLinks.concat(rightLinks);
+
+                console.log(JSON.stringify(nodes))
+                console.log(JSON.stringify(links))
                 /*
                 reverseSelectedMentions = Object.entries(reverseSelectedMentions).sort((a, b) => b[1] - a[1]).splice(0, 4);
                 const reverseSelectedNodes = reverseSelectedMentions.map(elem => {
@@ -231,7 +246,7 @@
                 */
 
                 let exampleGraph = {
-                    nodes: selectedNodes,
+                    nodes: nodes,
                     links: links
                 };
 
