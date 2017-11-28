@@ -83,29 +83,208 @@
 
             let eventShowing = [];
             let eventCodes;
-            let selectedEventCodes;
+            let selectedEventCodes = [];
+            let countriesMentions = {};
+            let selectedCountry = "CH";
+
+            function showSankeyMap(){
+                let selectionSankeyContainer = d3.select("#container_sankey");
+                let bboxSankeyContainer = selectionSankeyContainer.node().getBoundingClientRect();
+
+                let svg = d3.select("svg"),
+                    width = bboxSankeyContainer.width;
+                    height = bboxSankeyContainer.height;
+
+                svg.attr("width", width)
+                    .attr("height", height);
+
+                let formatNumber = d3.format(",.0f"),
+                    format = function(d) { return formatNumber(d) + " TWh"; },
+                    color = d3.scaleOrdinal(d3.schemeCategory10);
+
+                let sankey = d3.sankey()
+                    .nodeWidth(15)
+                    .nodePadding(10)
+                    .extent([[1, 1], [width - 1, height - 6]]);
+
+                let link = svg.append("g")
+                    .attr("class", "links")
+                    .attr("fill", "none")
+                    .attr("stroke", "#000")
+                    .attr("stroke-opacity", 0.2)
+                  .selectAll("path");
+
+                let node = svg.append("g")
+                    .attr("class", "nodes")
+                    .attr("font-family", "sans-serif")
+                    .attr("font-size", 10)
+                  .selectAll("g");
+
+
+                let nodes = [];
+                let countryIntMapping = {};
+                // I want to keep track of which countries are mentionning my selected country
+                let reverseSelectedMentions = {};
+                for(sourceCountry in countriesMentions){
+                    for(eventCountry in countriesMentions[sourceCountry]){
+                        if(nodes.map(node => node.name).indexOf(eventCountry) < 0){
+                            countryIntMapping[eventCountry] = nodes.length;
+                            nodes.push({name: eventCountry});
+                        }
+                        if(eventCountry === selectedCountry){
+                            reverseSelectedMentions[sourceCountry] = countriesMentions[sourceCountry][eventCountry];
+                        }
+                    }
+                }
+                console.log(nodes.length)
+
+                const nbCountries = nodes.length;
+                // The following is to avoid self loops
+                // Nodes on the right of the sankey diagram:
+                nodes = nodes.concat(nodes);
+
+                // Additional node for the selected country:
+                nodes.push({name: selectedCountry});
+
+                let selectedMentions = countriesMentions[selectedCountry];
+
+                delete selectedMentions[selectedCountry];
+                delete reverseSelectedMentions[selectedCountry];
+
+                function getSumMentions(mentions){
+                    return Object.keys(mentions).reduce(
+                        function(sum, key){
+                            let nbMentions = mentions[key];
+                            return sum + nbMentions
+                        },
+                        0
+                    );
+                };
+
+                let sumMentions = getSumMentions(selectedMentions);
+                let sumReverseMentions = getSumMentions(reverseSelectedMentions);
+
+                let proportionsMentions = Object.keys(selectedMentions).map(key => {
+                    return {
+                        source: nodes.length - 1,
+                        target: countryIntMapping[key] + nbCountries,
+                        value: selectedMentions[key] / sumMentions,
+                    }
+                });
+
+                let proportionsMentionsReverse = Object.keys(reverseSelectedMentions).map(key => {
+                    return {
+                        source: countryIntMapping[key],
+                        target: nodes.length - 1,
+                        value: reverseSelectedMentions[key] / sumReverseMentions,
+                    }
+                })
+
+                proportionsMentions = proportionsMentions.sort((a, b) => {
+                    return b.value - a.value;
+                }).slice(0, 4);
+
+                proportionsMentionsReverse = proportionsMentionsReverse.sort((a, b) => {
+                    return b.value - a.value;
+                }).slice(0, 4);
+
+                links = proportionsMentions.concat(proportionsMentionsReverse)
+
+                /*
+                let exampleGraph = {
+                    nodes: nodes,
+                    links: links
+                };
+                */
+
+
+                let exampleGraph = {
+                nodes: [{name: "USA"}, {name: "Haha"}, {name: "Machin"}, {name: "Italy"}, {name: "Germany"}, {name: "China"}
+                    ,
+                    {name: "Switzerland"},
+                    {name: "USA"}, {name: "France"}, {name: "Germany"}, {name: "Spain"}],
+                links: [{source: 0, target: 6, value: 0.5}, {source: 3, target: 6, value: 1}, {source: 4, target: 6, value: 1.2},
+                        {source: 5, target: 6, value: 1.1}, {source: 6, target: 7, value: 0.9}, {source: 6, target: 8, value: 1.9},
+                        {source: 6, target: 9, value: 1.7}, {source: 6, target: 10, value: 1.4}]
+                    };
+
+
+                console.log(JSON.stringify(exampleGraph))
+
+                sankey(exampleGraph);
+
+                link = link
+                .data(exampleGraph.links)
+                .enter().append("path")
+                  .attr("d", d3.sankeyLinkHorizontal())
+                  .attr("stroke-width", function(d) { return Math.max(1, d.width); });
+
+                link.append("title")
+                  .text(function(d) { return d.source.name + " → " + d.target.name + "\n" + format(d.value); });
+
+                node = node
+                .data(exampleGraph.nodes)
+                .enter().append("g");
+
+                node.append("rect")
+                  .attr("x", function(d) { return d.x0; })
+                  .attr("y", function(d) { return d.y0; })
+                  .attr("height", function(d) { return d.y1 - d.y0; })
+                  .attr("width", function(d) { return d.x1 - d.x0; })
+                  .attr("fill", function(d) { return color(d.name.replace(/ .*/, "")); })
+                  .attr("stroke", "#000");
+
+                node.append("text")
+                  .attr("x", function(d) { return d.x0 - 6; })
+                  .attr("y", function(d) { return (d.y1 + d.y0) / 2; })
+                  .attr("dy", "0.35em")
+                  .attr("text-anchor", "end")
+                  .text(function(d) { return d.name; })
+                .filter(function(d) { return d.x0 < width / 2; })
+                  .attr("x", function(d) { return d.x1 + 6; })
+                  .attr("text-anchor", "start");
+
+                node.append("title")
+                  .text(function(d) { return d.name + "\n" + format(d.value); });
+            }
 
             function showHeatmapData(){
                 d3.csv('november_lat_long_eventcode.csv', function(data){
 
                     function isANumber(number){
-                        return !isNaN(parseInt(number))
+                        return !isNaN(parseFloat(number))
                     }
 
                     if(heat){
                         map.removeLayer(heat);
                     }
 
-                    filteredGeoPoints = data.filter((row) => isANumber(row["ActionGeo_Lat"]) && isANumber(row["ActionGeo_Long"])
-                        && row["EventCode"].slice(0, 2) in selectedEventCodes)
+                    filteredGeoPoints = data.filter((row) => {
+                            const sourceCountry = row["SOURCE_CountryCode"];
+                            const eventCountry = row["ActionGeo_CountryCode"];
+                            if(!(sourceCountry in countriesMentions)){
+                                countriesMentions[sourceCountry] = {};
+                            }
+                            if(!(eventCountry in countriesMentions[sourceCountry])){
+                                countriesMentions[sourceCountry][eventCountry] = 0;
+                            }
+
+                            countriesMentions[sourceCountry][eventCountry] += 1;
+                            return selectedEventCodes.indexOf(row["EventRootCode"].slice(0, 2)) >= 0
+                        })
                         .map(row => L.latLng(row["ActionGeo_Lat"], row["ActionGeo_Long"]));
+
                     heat = L.heatLayer(filteredGeoPoints, {
                         radius: 15,
                         blur: 15,
                         maxZoom: 17,
                     }).addTo(map);
+
+                    showSankeyMap();
                 })
             }
+
+
 
             d3.tsv("CAMEO.eventcodes.txt", function(data) {
                 eventCodes = data.filter((cameoElem) => cameoElem.CAMEOEVENTCODE.length === 2);
@@ -143,83 +322,6 @@
             showHeatmapData();
 
             // Sankey part:
-
-            let selectionSankeyContainer = d3.select("#container_sankey");
-            let bboxSankeyContainer = selectionSankeyContainer.node().getBoundingClientRect();
-
-            let svg = d3.select("svg"),
-                width = bboxSankeyContainer.width;
-                height = bboxSankeyContainer.height;
-
-            svg.attr("width", width)
-                .attr("height", height);
-
-            let formatNumber = d3.format(",.0f"),
-                format = function(d) { return formatNumber(d) + " TWh"; },
-                color = d3.scaleOrdinal(d3.schemeCategory10);
-
-            let sankey = d3.sankey()
-                .nodeWidth(15)
-                .nodePadding(10)
-                .extent([[1, 1], [width - 1, height - 6]]);
-
-            let link = svg.append("g")
-                .attr("class", "links")
-                .attr("fill", "none")
-                .attr("stroke", "#000")
-                .attr("stroke-opacity", 0.2)
-              .selectAll("path");
-
-            let node = svg.append("g")
-                .attr("class", "nodes")
-                .attr("font-family", "sans-serif")
-                .attr("font-size", 10)
-              .selectAll("g");
-
-            let exampleGraph = {
-                nodes: [{name: "USA"}, {name: "Italy"}, {name: "Germany"}, {name: "China"},
-                    {name: "Switzerland"},
-                    {name: "USA"}, {name: "France"}, {name: "Germany"}, {name: "Spain"}],
-                links: [{source: 0, target: 4, value: 0.5}, {source: 1, target: 4, value: 1}, {source: 2, target: 4, value: 1.2},
-                        {source: 3, target: 4, value: 1.1}, {source: 4, target: 5, value: 0.9}, {source: 4, target: 6, value: 1.9},
-                        {source: 4, target: 7, value: 1.7}, {source: 4, target: 8, value: 1.4}]
-                    };
-
-            sankey(exampleGraph);
-
-          link = link
-            .data(exampleGraph.links)
-            .enter().append("path")
-              .attr("d", d3.sankeyLinkHorizontal())
-              .attr("stroke-width", function(d) { return Math.max(1, d.width); });
-
-          link.append("title")
-              .text(function(d) { return d.source.name + " → " + d.target.name + "\n" + format(d.value); });
-
-          node = node
-            .data(exampleGraph.nodes)
-            .enter().append("g");
-
-          node.append("rect")
-              .attr("x", function(d) { return d.x0; })
-              .attr("y", function(d) { return d.y0; })
-              .attr("height", function(d) { return d.y1 - d.y0; })
-              .attr("width", function(d) { return d.x1 - d.x0; })
-              .attr("fill", function(d) { return color(d.name.replace(/ .*/, "")); })
-              .attr("stroke", "#000");
-
-          node.append("text")
-              .attr("x", function(d) { return d.x0 - 6; })
-              .attr("y", function(d) { return (d.y1 + d.y0) / 2; })
-              .attr("dy", "0.35em")
-              .attr("text-anchor", "end")
-              .text(function(d) { return d.name; })
-            .filter(function(d) { return d.x0 < width / 2; })
-              .attr("x", function(d) { return d.x1 + 6; })
-              .attr("text-anchor", "start");
-
-          node.append("title")
-              .text(function(d) { return d.name + "\n" + format(d.value); });
         </script>
     </body>
 </html>
